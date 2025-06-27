@@ -1,81 +1,56 @@
 from typing import List
 from langsmith import traceable
-from app.model.vectorstore_model import search_vectorstore
-from app.service.langstream_service import run_traced_claude_task
-from app.model.embedding_model import get_embedding
+from model.text_extractor_model import WhatsAppChatExtractor
+from model.embedding_model import get_embedding
+from model.vectorstore_model import add_to_vectorstore
+from model.metadata_model import save_file_metadata
+from controller.analyst_controller import run_analyst_agent
+from ingestion.uploader import save_file_to_mongo
 
 @traceable(name="WhatsApp Document Agent")
-def process_chat_logs(query: str, top_k: int = 5) -> str:
+def process_uploaded_file(file: object, file_type: str) -> str:
     """
-    Processes WhatsApp chat logs (e.g., multiple files like Part1.txt, Part2.txt) to
-    extract structured insights such as topic summaries, tasks, and early warnings.
+    Processes uploaded WhatsApp chat or metadata file from MongoDB.
 
     Parameters:
-    - query (str): User query (e.g., "extract tasks from all chat logs").
-    - top_k (int): Number of top results to retrieve from vector store.
+    - file: File object (Streamlit uploaded file).
+    - file_type (str): Type of file ('chat_log' for .txt, 'metadata' for .json).
 
     Returns:
-    - str: Structured output with summaries, tasks, and alerts.
+    - str: Analysis results (summaries, tasks, alerts).
     """
     try:
-        # Step 1: Generate embedding for the user query
-        query_embedding = get_embedding(query)
+        # Validate file type
+        if file_type not in ["chat_log", "metadata"]:
+            return f"❌ Invalid file type: {file_type}. Expected 'chat_log' or 'metadata'."
 
-        # Step 2: Search ChromaDB for relevant chat messages
-        search_results = search_vectorstore(query_embedding, top_k=top_k)
+        # Upload to MongoDB
+        metadata = save_file_to_mongo(file, "GRP_DCB_VZM", file_type)
+        save_file_metadata(metadata["file_id"], metadata["file_name"], file_type, metadata["group_id"])
 
-        matched_docs: List[str] = search_results.get("documents", [[]])[0]
-        metadatas: List[dict] = search_results.get("metadatas", [[]])[0]
-
-        if not matched_docs:
-            return "⚠️ No relevant chat messages found to process."
-
-        # Step 3: Combine context + metadata (group, sender, role, timestamp, file)
-        context_blocks = []
-        for idx, doc in enumerate(matched_docs):
-            metadata = metadatas[idx]
-            tag = (
-                f"(File: {metadata.get('file_name', 'Unknown')}, "
-                f"Group: {metadata.get('group_name', 'Unknown')}, "
-                f"Sender: {metadata.get('sender_name', 'Unknown')} - {metadata.get('sender_role', 'Unknown')}, "
-                f"Timestamp: {metadata.get('timestamp', 'N/A')})"
-            )
-            context_blocks.append(f"{tag}\n{doc.strip()}")
-
-        context = "\n\n---\n\n".join(context_blocks)
-
-        # Step 4: Compose Claude prompt
-        prompt = f"""
-You are an AI assistant processing WhatsApp chat logs from law enforcement groups.
-
-You are given message excerpts from chat logs with metadata (file, group, sender name, role, timestamp). Your job is to:
-1. Summarize conversations by topic (e.g., drug cases, jewelry heists, cyber scams).
-2. Extract tasks and assignments (e.g., "assign teams," "update by 3 PM") with details like assignee, due date, and priority.
-3. Identify early warnings (e.g., messages with "urgent," "alert," or emojis like 🚨).
-4. Correlate entities (e.g., link senders to roles, map task assignments to hierarchy).
-5. Answer the user’s query based ONLY on the context provided, providing structured insights.
-
-Respond in **clear and concise bullet points** using these symbols:
-- 📌 for topic-based summaries
-- ✅ for extracted tasks (include assignee, task description, due date if available)
-- ⚠️ for early warnings or urgent alerts
-- 🔗 for correlations between entities (e.g., sender roles, task assignments)
-
----
-
-📄 Chat Log Context:
-{context}
-
-❓ Query:
-{query}
-
----
-
-💬 Final Answer:
-"""
-
-        # Step 5: Get structured insights from Claude
-        return run_traced_claude_task(prompt, agent_name="WhatsApp Document Agent")
+        if file_type == "chat_log":
+            # Extract messages
+            extractor = WhatsAppChatExtractor()
+            messages = extractor.extract_messages(metadata["file_id"])
+            
+            # Generate and store embeddings
+            for msg in messages:
+                embedding = get_embedding(msg["message"])
+                vector_metadata = {
+                    "file_id": msg["file_id"],
+                    "group_id": msg["group_id"],
+                    "sender_name": msg["sender_name"],
+                    "sender_role": msg["sender_role"],
+                    "timestamp": msg["timestamp"],
+                    "language": msg["language"]
+                }
+                add_to_vectorstore(msg["_id"], embedding, vector_metadata, msg["message"])
+            
+            # Run analysis
+            analysis = run_analyst_agent(metadata["file_id"])
+            return analysis
+        else:
+            return "✅ Metadata file processed and stored."
 
     except Exception as e:
-        return f"❌ Error during chat log processing: {type(e).__name__} - {e}"
+        return f"❌ Error processing file: {type(e).__name__} - {e}"

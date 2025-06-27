@@ -1,54 +1,53 @@
-import os
-from chromadb import Client
+import chromadb
+from typing import List, Dict, Optional
 from chromadb.config import Settings
-from typing import List, Dict
-from chromadb import PersistentClient
 
+# Initialize Chroma DB client with persistent storage
+client = chromadb.PersistentClient(path="./chroma_db")
+collection = client.get_or_create_collection(name="whatsapp_chats")
 
-# Set absolute path for chroma_db folder relative to this file
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CHROMA_DB_DIR = os.path.join(BASE_DIR, "../../chroma_db")
-CHROMA_DB_DIR = os.path.abspath(CHROMA_DB_DIR)
+def add_to_vectorstore(message_id: str, embedding: List[float], metadata: Dict, text: str) -> None:
+    """
+    Adds an embedding to Chroma DB with metadata and text.
 
-print(f"📂 Chroma DB will be stored at: {CHROMA_DB_DIR}")
-os.makedirs(CHROMA_DB_DIR, exist_ok=True)  # Create folder if it doesn't exist
-
-# Initialize Chroma client with persistence
-client = PersistentClient(path=CHROMA_DB_DIR)
-# Create or get the collection
-collection = client.get_or_create_collection(name="documents")
-
-def log_stored_documents():
-    try:
-        docs = collection.get()
-        print("✅ Stored Document IDs:", docs.get("ids", []))
-        print("🧠 Metadata:", docs.get("metadatas", []))
-    except Exception as e:
-        print("⚠️ Failed to retrieve stored documents:", e)
-
-def add_to_vectorstore(
-    doc_id: str,
-    embedding: List[float],
-    metadata: Dict,
-    document_text: str = ""
-):
+    Parameters:
+    - message_id (str): Unique ID for the message.
+    - embedding (List[float]): Embedding vector.
+    - metadata (Dict): Metadata (file_id, group_id, sender_name, sender_role, timestamp).
+    - text (str): Original message text.
+    """
     try:
         collection.add(
-            ids=[doc_id],
+            ids=[message_id],
             embeddings=[embedding],
             metadatas=[metadata],
-            documents=[document_text]
+            documents=[text]
         )
-        print(f"✅ Added to ChromaDB: {doc_id}")
-        log_stored_documents()
+        print(f"✅ Added embedding for message ID: {message_id}")
     except Exception as e:
-        print(f"❌ Failed to add {doc_id} to ChromaDB:", e)
+        print(f"❌ Error adding to Chroma DB: {type(e).__name__} - {e}")
 
-def search_vectorstore(query_embedding: List[float], top_k: int = 5):
+def search_vectorstore(query_embedding: List[float], top_k: int = 5) -> Dict:
+    """
+    Searches Chroma DB for similar embeddings.
+
+    Parameters:
+    - query_embedding (List[float]): Embedding of the query.
+    - top_k (int): Number of results to return.
+
+    Returns:
+    - Dict: Search results with documents, metadatas, and distances.
+    """
     try:
-        results = collection.query(query_embeddings=[query_embedding], n_results=top_k)
-        print("🔍 Query Results:", results)
-        return results
+        results = collection.query(
+            query_embeddings=[query_embedding],
+            n_results=top_k
+        )
+        return {
+            "documents": results.get("documents", [[]]),
+            "metadatas": results.get("metadatas", [[]]),
+            "distances": results.get("distances", [[]])
+        }
     except Exception as e:
-        print("❌ Vector search failed:", e)
-        return {}
+        print(f"❌ Error searching Chroma DB: {type(e).__name__} - {e}")
+        return {"documents": [[]], "metadatas": [[]], "distances": [[]]}

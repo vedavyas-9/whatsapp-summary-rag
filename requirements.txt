@@ -9,4 +9,4 @@ neo4j
 pdfplumber
 langchain
 langchain-aws
-
+python-dotenv

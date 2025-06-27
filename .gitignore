@@ -1,0 +1,111 @@
+# Python
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+*.whl
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+env.bak/
+venv.bak/
+
+# Environment variables and sensitive data
+.env
+*.env
+secrets/
+credentials.json
+*.key
+*.pem
+*.crt
+*.cer
+*.pfx
+*.p12
+config.ini
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Streamlit
+.streamlit/
+streamlit/*.log
+*.log
+
+# Dependency management
+Pipfile.lock
+requirements.txt.bak
+
+# Testing and coverage
+.coverage
+coverage.xml
+*.cover
+*.cache
+nosetests.xml
+pytest_cache/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+*.temp
+
+# Data and output files
+*.csv
+*.jsonl
+*.xlsx
+*.pdf
+*.docx
+*.txt.bak
+data/
+outputs/
+logs/
+*.log
+*.sql
+*.sqlite
+*.db
+
+# MongoDB Atlas backups
+*.bson
+*.dump
+mongo_backup/
+
+# AWS credentials
+.aws/
+aws_credentials
+*.aws
+
+# Project-specific
+Part1.txt
+members_info.json
+hierarchy.json
+ranks.json
+group_info.json
+*.txt
+*.json
+
+# Miscellaneous
+*.zip
+*.tar.gz
+*.rar
+*.7z
+node_modules/
+dist/
+tmp/
