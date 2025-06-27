@@ -1,0 +1,65 @@
+[
+    {
+        "Name": "datasets/IPDR_Set1",
+        "Type": "IPDR",
+        "Definition": "Internet session logs for subscribers",
+        "Intelligence Level": 1,
+        "Format": "PDF"
+    },
+    {
+        "Name": "datasets/CDR_Set1",
+        "Type": "CDR",
+        "Definition": "Call detail records with caller and callee information",
+        "Intelligence Level": 1,
+        "Format": "XLSX"
+    },
+    {
+        "Name": "datasets/FIR_Set1",
+        "Type": "FIR",
+        "Definition": "First Information Report detailing an incident",
+        "Intelligence Level": 1,
+        "Format": "DOCX"
+    },
+    {
+        "Name": "datasets/IPDR_Set2",
+        "Type": "IPDR",
+        "Definition": "Internet session logs for subscribers",
+        "Intelligence Level": 1,
+        "Format": "PDF"
+    },
+    {
+        "Name": "datasets/CDR_Set2",
+        "Type": "CDR",
+        "Definition": "Call detail records with caller and callee information",
+        "Intelligence Level": 1,
+        "Format": "XLSX"
+    },
+    {
+        "Name": "datasets/FIR_Set2",
+        "Type": "FIR",
+        "Definition": "First Information Report detailing an incident",
+        "Intelligence Level": 1,
+        "Format": "DOCX"
+    },
+    {
+        "Name": "datasets/IPDR_Set3",
+        "Type": "IPDR",
+        "Definition": "Internet session logs for subscribers",
+        "Intelligence Level": 1,
+        "Format": "PDF"
+    },
+    {
+        "Name": "datasets/CDR_Set3",
+        "Type": "CDR",
+        "Definition": "Call detail records with caller and callee information",
+        "Intelligence Level": 1,
+        "Format": "XLSX"
+    },
+    {
+        "Name": "datasets/FIR_Set3",
+        "Type": "FIR",
+        "Definition": "First Information Report detailing an incident",
+        "Intelligence Level": 1,
+        "Format": "DOCX"
+    }
+]

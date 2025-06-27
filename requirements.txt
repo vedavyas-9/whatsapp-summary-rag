@@ -1,0 +1,12 @@
+streamlit
+boto3
+pymongo
+pypdf
+python-docx
+pandas
+chromadb
+neo4j
+pdfplumber
+langchain
+langchain-aws
+
