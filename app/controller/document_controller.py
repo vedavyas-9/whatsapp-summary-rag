@@ -11,7 +11,7 @@ def process_document(uploaded, doc_type):
     file_bytes = uploaded.read()
     uploaded.seek(0)
     s3_path = upload_file_to_s3(uploaded)
-    save_metadata(uploaded.name, doc_type, s3_path)
+    save_metadata(uploaded.name, doc_type)
     text = extract_text(file_bytes, uploaded.name)
     embedding = get_embedding(text)
     add_to_vectorstore(doc_id=uploaded.name, embedding=embedding, metadata={"type": doc_type})

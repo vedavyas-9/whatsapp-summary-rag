@@ -9,4 +9,5 @@ neo4j
 pdfplumber
 langchain
 langchain-aws
-
+fastapi
+python-multipart

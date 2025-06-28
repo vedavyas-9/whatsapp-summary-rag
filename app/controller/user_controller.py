@@ -1,6 +1,7 @@
 from typing import List
 from langsmith import traceable
 import logging
+
 from app.model.vectorstore_model import search_vectorstore
 from app.service.langstream_service import run_traced_claude_task
 from app.model.embedding_model import get_embedding
@@ -12,11 +13,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-@traceable(name="Chat Agent")
-def answer_query(query: str, top_k: int = 5) -> str:
+@traceable(name="User Agent")
+def user_query(query: str, top_k: int = 5) -> str:
     try:
-        print("inside chat controller")
-        logger.info("inside chat controller")
+        logger.info("Inside the user agent")
         # Step 1: Generate Titan embedding for the user query
         query_embedding = get_embedding(query)
 
@@ -36,9 +36,10 @@ def answer_query(query: str, top_k: int = 5) -> str:
             context_blocks.append(f"{tag}\n{doc.strip()}")
 
         context = "\n\n---\n\n".join(context_blocks)
+        logger.info("Context sent to LLM:\n%s", context)
 
         # Step 4: Compose Claude prompt
-        prompt = f"""
+        prompt = f'''
 You are an AI assistant for the AP Police AI Platform, designed to process and query police-related documents stored in a vector store. The documents include:
 
 1. **members_info.json**: Contains user details with fields: mem_id, grp_id, Sub_Division, Circle, Rank, Officer_Name, Mobile_no.
@@ -88,21 +89,21 @@ Your task is to respond to queries about users and groups based on the provided 
 - Documents include `members_info.json`, `group_info.json`, `hierarchy.json`, `ranks.json`, and chat logs (`Part1.txt`, `Part2.txt`), but focus on user/group data unless chat logs are requested.
 - Context includes vector store search results with chunks of relevant documents.
 - Current date and time: 11:45 AM IST, Saturday, June 28, 2025.
----
 
-📄 Document Context:
+**Document Context**:
 {context}
 
-❓ Question:
+**Query**:
 {query}
 
----
+**Final Answer**:
+Return the response as a JSON string in the format:
+'''
 
-💬 Final Answer:
-"""
-
+        
         # Step 5: Get answer from Claude with LangSmith trace
-        return run_traced_claude_task(prompt, agent_name="Chat Agent")
+        print("\n\n response from llm:", run_traced_claude_task(prompt, agent_name="User Agent"))
+        return run_traced_claude_task(prompt, agent_name="User Agent")
 
     except Exception as e:
         return f"❌ Error during query processing: {type(e).__name__} - {e}"
