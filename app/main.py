@@ -8,6 +8,8 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 from typing import List
 from dotenv import load_dotenv
+from datetime import datetime
+from typing import Dict, Any
 
 # Load environment variables
 load_dotenv()
@@ -30,6 +32,7 @@ from app.service.langstream_service import run_traced_claude_task
 from app.controller.chat_controller import answer_query
 from app.controller.task_controller import task_query
 from app.controller.user_controller import user_query
+from app.controller.summary_controller import summary_query
 
 # Initialize FastAPI app
 app = FastAPI(title="AP Police AI Platform", description="API for processing police documents and querying data")
@@ -229,6 +232,53 @@ async def query_user(query: str = Form(...)):
         return JSONResponse(content={"status": "success", "response": response})
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Query failed: {type(e).__name__}: {str(e)}")
+    
+# def parse_response(response: str) -> Dict[str, Any]:
+#     try:
+#         json_match = re.search(r"```json\n(.*?)\n```", response, re.DOTALL)
+#         if not json_match:
+#             logger.error("No JSON block found in response")
+#             raise ValueError("Response does not contain a valid JSON block")
+
+#         json_str = json_match.group(1)
+#         logger.info("Extracted JSON string: %s", json_str[:100] + "..." if len(json_str) > 100 else json_str)
+#         data = json.loads(json_str)
+
+#         if not isinstance(data, dict) or "status" not in data or "response" not in data:
+#             logger.error("Invalid response structure: missing 'status' or 'response'")
+#             raise ValueError("Invalid response structure")
+
+#         return data
+
+#     except json.JSONDecodeError as e:
+#         logger.error("Failed to parse JSON: %s", e)
+#         return {"status": "error", "message": f"Invalid JSON: {str(e)}"}
+#     except Exception as e:
+#         logger.error("Error parsing response: %s - %s", type(e).__name__, e)
+#         return {"status": "error", "message": f"Error: {str(e)}"}
+    
+@app.get("/users/{user_id}/groups/{group_id}/summary")
+async def get_group_summary(user_id: str, group_id: str, start_date: str, end_date: str, summary_rules:str):
+    try:
+        # Validate date format
+        try:
+            datetime.strptime(start_date, "%Y-%m-%d")
+            datetime.strptime(end_date, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
+
+        logger.info("Received request for summary: user_id=%s, group_id=%s, date range=%s to %s", 
+                    user_id, group_id, start_date, end_date)
+        response = summary_query(user_id, group_id, start_date, end_date, summary_rules)
+        # parsed_data = parse_response(response)
+        logger.info("Parsed summary response: %s", response)
+        return response
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        logger.error("Error processing summary for user_id %s, group_id %s: %s - %s", 
+                     user_id, group_id, type(e).__name__, e)
+        return {"status": "error", "message": str(e)}
 
 if __name__ == "__main__":
     import uvicorn
