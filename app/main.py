@@ -28,6 +28,7 @@ from app.service.langstream_service import run_traced_claude_task
 from app.controller.chat_controller import answer_query
 from app.controller.task_controller import task_query
 from app.controller.user_controller import user_query
+from app.controller.group_task_controller import group_task  # make sure import is correct
 
 
 # === Embedding: Titan Embedder ===
@@ -207,6 +208,15 @@ async def query_task(query: str = Form(...)):
         return JSONResponse(content={"status": "success", "response": response})
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Query failed: {type(e).__name__}: {str(e)}")
+
+@app.post("/groups/groupid/task")
+async def query_task(group_id: str = Form(...)):
+    try:
+        response = group_task(group_id=group_id)
+        return JSONResponse(content={"status": "success", "response": json.loads(response)})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Query failed: {type(e).__name__}: {str(e)}")
+
 
 @app.post("/users")
 async def query_user(query: str = Form(...)):
